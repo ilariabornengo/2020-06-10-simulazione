@@ -5,8 +5,13 @@
 package it.polito.tdp.imdb;
 
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.ResourceBundle;
 
+import it.polito.tdp.imdb.model.Actor;
+import it.polito.tdp.imdb.model.ComparatorCognome;
 import it.polito.tdp.imdb.model.Model;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -35,10 +40,10 @@ public class FXMLController {
     private Button btnSimulazione; // Value injected by FXMLLoader
 
     @FXML // fx:id="boxGenere"
-    private ComboBox<?> boxGenere; // Value injected by FXMLLoader
+    private ComboBox<String> boxGenere; // Value injected by FXMLLoader
 
     @FXML // fx:id="boxAttore"
-    private ComboBox<?> boxAttore; // Value injected by FXMLLoader
+    private ComboBox<Actor> boxAttore; // Value injected by FXMLLoader
 
     @FXML // fx:id="txtGiorni"
     private TextField txtGiorni; // Value injected by FXMLLoader
@@ -48,17 +53,71 @@ public class FXMLController {
 
     @FXML
     void doAttoriSimili(ActionEvent event) {
-
+    	this.txtResult.clear();
+    	Actor attore=this.boxAttore.getValue();
+    	if(attore==null)
+    	{
+    		txtResult.setText("SCEGLI UN ATTORE");
+    	}
+    	else
+    	{
+    		List<Actor> simili=new ArrayList<Actor>(this.model.getConnectedActors(attore));
+    		txtResult.appendText("GLI ATTORI SIMILI A "+attore.toString()+" SONO :\n");
+    		for(Actor a:simili)
+    		{
+    		txtResult.appendText(a.toString()+"\n");
+    		}
+    		
+    	}
+    	
     }
 
     @FXML
     void doCreaGrafo(ActionEvent event) {
 
+    	String genere=this.boxGenere.getValue();
+    	if(genere==null)
+    	{
+    		txtResult.setText("SCEGLI UN VALORE");
+    		
+    	}
+    	else
+    	{
+    	this.model.creaGrafo(genere);
+    	List<Actor> attoriBox=new ArrayList<Actor>(this.model.getIdMap().values());
+    	Collections.sort(attoriBox,new ComparatorCognome());
+    	this.boxAttore.getItems().addAll(attoriBox);
+    	txtResult.appendText("GRAFO CREATO\n");
+    	txtResult.appendText("# ARCHI: "+this.model.getNumeroArchi()+"\n");
+    	txtResult.appendText("# VERTICI: "+this.model.getNumeroVertici()+"\n");
+    	}
+    	
+    	
+    	
     }
 
     @FXML
     void doSimulazione(ActionEvent event) {
 
+    	String num=this.txtGiorni.getText();
+    	int numPause=0;
+    	List<Actor> attoriIntervistati=new ArrayList<Actor>();
+    	Integer numI=0;
+    	try {
+    		numI=Integer.parseInt(num);
+    	}catch(NumberFormatException e)
+    	{
+    		e.printStackTrace();
+    	}
+    	model.simulate(numI);
+    	numPause=this.model.getPause();
+    	//attoriIntervistati=this.model.getAttoriSim();
+    	this.txtResult.appendText("L'INTERVISTATORE PER INTERVISTARE SI E' PRESO "+numPause+" PAUSE\n ");
+    	for(Actor a:model.getAttoriSim())
+    	{
+    		txtResult.appendText(a.toString()+"\n");
+    	}
+    	
     }
 
     @FXML // This method is called by the FXMLLoader when initialization is complete
@@ -75,5 +134,6 @@ public class FXMLController {
     
     public void setModel(Model model) {
     	this.model = model;
+    	this.boxGenere.getItems().addAll(this.model.getGeneri());
     }
 }
